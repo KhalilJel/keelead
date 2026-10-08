@@ -34,3 +34,5 @@ USER nextjs
 EXPOSE 3000
 
 CMD ["sh", "-c", "npx prisma db push --accept-data-loss && npm run start"]
+
+RUN sed -i 's/const count = options?\.count || leads\.length/const count = leads.length/' lib/sources/local/openstreetmap.ts
