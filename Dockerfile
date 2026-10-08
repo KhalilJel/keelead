@@ -8,6 +8,7 @@ RUN npm install next@15.5.27 --save-exact --no-audit --no-fund
 RUN npm install --no-audit --no-fund
 RUN npx prisma generate
 RUN sed -i "s/el\.textContent() || ''/el.textContent().then((text) => text ?? '')/" lib/browser/index.ts
+RUN sed -i 's/out center body;`);/out center body;`/' lib/sources/local/openstreetmap.ts
 RUN npm run build
 
 FROM node:20-alpine AS runner
