@@ -7,6 +7,7 @@ RUN git clone --depth 1 https://github.com/Atum246/keelead.git .
 RUN npm install next@15.5.27 --save-exact --no-audit --no-fund
 RUN npm install --no-audit --no-fund
 RUN npx prisma generate
+RUN sed -i 's/el.textContent() || '\'' '\''/el.textContent() ?? '\'' '\''/g' lib/browser/index.ts
 RUN npm run build
 
 FROM node:20-alpine AS runner
