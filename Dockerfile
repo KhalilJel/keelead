@@ -13,6 +13,7 @@ RUN sed -i 's/return this.searchWithGeo({ \.\.\.parsed, location: query }, fallb
 RUN sed -i 's/return this.searchWithGeo(parsed, geoResult, options)/return this.searchWithGeo(parsed, geoResult)/' lib/sources/local/openstreetmap.ts
 RUN sed -i 's/private async searchWithGeo(\n    parsed: ParsedQuery,\n    geo: NominatimResult\n  )/private async searchWithGeo(\n    parsed: ParsedQuery,\n    geo: NominatimResult,\n    options?: SearchOptions\n  )/' lib/sources/local/openstreetmap.ts
 RUN sed -i 's/const count = options?\\.count || leads\\.length/const count = leads.length/' lib/sources/local/openstreetmap.ts
+RUN sed -i 's/const count = options?\.count || leads\.length/const count = leads.length/' lib/sources/local/openstreetmap.ts
 RUN npm run build
 
 FROM node:20-alpine AS runner
