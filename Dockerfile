@@ -9,7 +9,7 @@ RUN npm install --no-audit --no-fund
 RUN npx prisma generate
 RUN sed -i "s/el\.textContent() || ''/el.textContent().then((text) => text ?? '')/" lib/browser/index.ts
 RUN sed -i 's/out center body;`);/out center body;`/' lib/sources/local/openstreetmap.ts
-RUN sed -i 's/return this.searchWithGeo({ \.\.\.parsed, location: query }, fallback)/return this.searchWithGeo({ ...parsed, location: query }, fallback, options)/' lib/sources/local/openstreetmap.ts
+RUN sed -i 's/return this.searchWithGeo({ \.\.\.parsed, location: query }, fallback, options)/return this.searchWithGeo({ ...parsed, location: query }, fallback)/' lib/sources/local/openstreetmap.ts
 RUN sed -i 's/return this.searchWithGeo(parsed, geoResult)/return this.searchWithGeo(parsed, geoResult, options)/' lib/sources/local/openstreetmap.ts
 RUN sed -i 's/private async searchWithGeo(\n    parsed: ParsedQuery,\n    geo: NominatimResult\n  )/private async searchWithGeo(\n    parsed: ParsedQuery,\n    geo: NominatimResult,\n    options?: SearchOptions\n  )/' lib/sources/local/openstreetmap.ts
 RUN npm run build
