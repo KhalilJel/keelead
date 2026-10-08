@@ -1,5 +1,5 @@
 FROM node:20-alpine AS builder
-RUN apk add --no-cache git
+RUN apk add --no-cache git openssl
 WORKDIR /src
 
 RUN git clone --depth 1 https://github.com/Atum246/keelead.git .
@@ -17,6 +17,7 @@ RUN sed -i 's/const count = options?\.count || leads\.length/const count = leads
 RUN npm run build
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
