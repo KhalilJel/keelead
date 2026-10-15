@@ -33,11 +33,20 @@ jobs:
             import fs from "node:fs";
             const status = fs.readFileSync("/tmp/status", "utf8");
             const body = JSON.parse(fs.readFileSync("/tmp/search.json", "utf8"));
+            console.log(JSON.stringify({probe:"Microsoft", status, total:body.total, partial:body.partial, error:body.error}));
             if (status === "200") {
               if (!Array.isArray(body.leads) || body.leads.length > 1 || typeof body.partial !== "boolean") throw Error("Invalid result");
             } else if (status !== "503" || !["SOURCES_UNAVAILABLE", "SEARCH_TIMEOUT"].includes(body.error)) {
               throw Error(`Worker startup/route failure: ${status} ${JSON.stringify(body)}`);
             }
+          '
+          curl --max-time 30 -s -o /tmp/oslo.json -w '%{http_code}' -H 'content-type: application/json' -d '{"query":"web design businesses in Oslo","count":2,"location":"Oslo","industry":"professional services"}' http://localhost:3000/api/leads > /tmp/oslo-status
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const status = fs.readFileSync("/tmp/oslo-status", "utf8");
+            const body = JSON.parse(fs.readFileSync("/tmp/oslo.json", "utf8"));
+            console.log(JSON.stringify({probe:"Gullkornet Oslo", status, total:body.total, partial:body.partial, error:body.error}));
+            if (status !== "200" || !Array.isArray(body.leads)) throw Error("Gullkornet integration query is not operational; do not deploy");
           '
           # Startup must not create the configured SQLite database.
           docker exec keelead test ! -e /tmp/ci.db
