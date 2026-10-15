@@ -36,6 +36,18 @@ accept-data-loss. Any database schema operation requires a separate reviewed
 operation. Rollback must retain this startup restriction; the previous image
 automatically invoked db push with accept-data-loss and is not a safe rollback.
 
+The pinned upstream schema hardcodes `file:./keelead.db`; setting DATABASE_URL
+does not redirect it. CI therefore checks both that actual Prisma path and the
+environment-specified path. No schema, existing volume or production database is
+changed by this patch. The production `/app/data` volume must be preserved.
+
+Scope limitation: other upstream endpoints remain unchanged. In particular,
+`/api/enrich` contains example contact attributes and `/api/research` generates
+fictional company details. Their existing shape-only acceptance checks do not
+establish data accuracy. They must not be treated as verified business evidence.
+Gullkornet Lite's registry/website intake and MX checks are separate; this patch
+does not qualify candidates for that queue or permit any email sending.
+
 Validate with `node --test tests/search.test.mjs` and `docker build .`.
 Before merging/deploying, review the container build and actual search smoke
 result. After deployment, verify health, a genuine bounded query, and Gullkornet's

@@ -51,3 +51,4 @@ jobs:
           '
           # Startup must not create the configured SQLite database.
           docker exec keelead test ! -e /tmp/ci.db
+          docker exec keelead test ! -e /app/prisma/keelead.db
