@@ -63,7 +63,7 @@ export function createSearchRunner({ workerPath = path.join(process.cwd(), 'runt
         if (settled) return;
         settled = true;
         clearTimeout(timer);
-        const complete = completed.size === 3 && [...completed.values()].every(value => value.healthy && !value.partial);
+        const complete = completed.size === 4 && [...completed.values()].every(value => value.healthy && !value.partial);
         // Empty + failed/missing source is an outage, never a fake successful empty search.
         if (error || (!leads.length && !complete)) failure = error ?? new SearchError(timedOut ? 'SEARCH_TIMEOUT' : 'SOURCES_UNAVAILABLE');
         else result = { leads: leads.slice(0, input.count), partial: !complete, completedSources: completed.size, cached: false };
@@ -75,7 +75,7 @@ export function createSearchRunner({ workerPath = path.join(process.cwd(), 'runt
         child.once('exit', release);
         child.on('message', message => {
           if (settled || !message || typeof message !== 'object') return;
-          if (message.type === 'source' && ['duckduckgo', 'searxng', 'github-orgs'].includes(message.id) && !completed.has(message.id)) {
+          if (message.type === 'source' && ['duckduckgo', 'searxng', 'github-orgs', 'brreg'].includes(message.id) && !completed.has(message.id)) {
             completed.set(message.id, { healthy: message.healthy === true, partial: message.partial === true });
             for (const lead of (Array.isArray(message.leads) ? message.leads.slice(0, input.count) : [])) {
               if (!lead || typeof lead !== 'object' || typeof lead.source !== 'string') continue;
@@ -86,7 +86,7 @@ export function createSearchRunner({ workerPath = path.join(process.cwd(), 'runt
               seen.add(identity.toLowerCase());
               leads.push(lead);
             }
-            if (leads.length >= input.count || completed.size === 3) finish();
+            if (leads.length >= input.count || completed.size === 4) finish();
           }
         });
         timer = setTimeout(() => finish(true), budgetMs);

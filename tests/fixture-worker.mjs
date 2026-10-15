@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-const ids = ['duckduckgo', 'searxng', 'github-orgs'];
+const ids = ['duckduckgo', 'searxng', 'github-orgs', 'brreg'];
 const lead = i => ({ company: `Fixture ${i}`, firstName: '', lastName: '', source: 'Fixture', website: `https://fixture${i}.test`, metadata: { url: `https://fixture${i}.test` } });
 process.once('message', input => {
   // Keep deliberately hanging fixtures alive after their one-shot IPC listener runs.

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createSearchRunner, parseSearch } from '../runtime/search-runner.mjs';
 import { makeBudgetedFetch } from '../runtime/bounded-fetch.mjs';
+import { searchRegistry } from '../runtime/registry-source.mjs';
 const workerPath = fileURLToPath(new URL('./fixture-worker.mjs', import.meta.url));
 const runner = options => createSearchRunner({ workerPath, execArgv: [], budgetMs: 1000, ...options });
 
@@ -17,7 +18,7 @@ test('request validation refuses malformed query/count/filter before spawning', 
 test('count, deduplication, complete results and bounded cache', async () => {
   const search = runner();
   const result = await search({ query: 'complete', count: 10 });
-  assert.equal(result.leads.length, 3);
+  assert.equal(result.leads.length, 4);
   assert.equal(result.partial, false);
   assert.equal((await search({ query: 'complete', count: 10 })).cached, true);
   const small = await search({ query: 'complete', count: 2 });
@@ -81,4 +82,25 @@ test('request deadline aborts underlying I/O and response byte/call budgets fail
   const capped = makeBudgetedFetch(async () => { throw new Error('must not run'); }, new AbortController().signal, () => stats, { maxCalls: 0 });
   await assert.rejects(capped('https://api.github.com/search/users'), /SOURCE_BUDGET/);
   await assert.rejects(capped('http://127.0.0.1/'));
+});
+
+test('registry discovery keeps observed AS/ASA records with provenance and rejects unsafe matches', async () => {
+  const unit = { organisasjonsnummer: '123456789', navn: 'Fixture Webdesign AS', organisasjonsform: { kode: 'AS' }, forretningsadresse: { kommunenummer: '0301', poststed: 'OSLO' } };
+  let requested;
+  const fetcher = async url => {
+    requested = url;
+    return new Response(JSON.stringify({ _embedded: { enheter: [unit,
+      { ...unit, konkurs: true }, { ...unit, underAvvikling: true },
+      { ...unit, organisasjonsform: { kode: 'ENK' } },
+      { ...unit, forretningsadresse: { kommunenummer: '3201' } }] } }));
+  };
+  const result = await searchRegistry('web design businesses in Oslo', { location: 'Oslo', count: 2 }, fetcher);
+  assert.equal(requested.searchParams.get('navn'), 'webdesign');
+  assert.equal(requested.searchParams.get('forretningsadresse.kommunenummer'), '0301');
+  assert.equal(result.leads.length, 1);
+  assert.equal(result.leads[0].metadata.organizationNumber, '123456789');
+  assert.equal(result.leads[0].metadata.qualified, false);
+  assert.equal(result.leads[0].email, undefined);
+  assert.equal(result.leads[0].website, undefined);
+  assert.deepEqual(await searchRegistry('webdesign', { location: 'London', count: 2 }, () => { throw Error('must not fetch'); }), { applicable: false, leads: [] });
 });

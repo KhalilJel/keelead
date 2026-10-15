@@ -1,0 +1,1 @@
+export function searchRegistry(query: string, options: { location?: string; count: number }, fetcher?: typeof fetch): Promise<{ applicable: boolean; leads: Array<{ source: string; metadata: Record<string, unknown>; [key: string]: unknown }> }>;

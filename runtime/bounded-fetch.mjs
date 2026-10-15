@@ -9,7 +9,7 @@ export function makeBudgetedFetch(nativeFetch, signal, currentStats, { maxBytes 
     try {
       if (stats.calls > maxCalls || signal.aborted) throw new Error('SOURCE_BUDGET');
       const url = new URL(input instanceof Request ? input.url : String(input));
-      if (url.protocol !== 'https:' || !(SEARX.has(url.hostname) || ['api.github.com', 'api.duckduckgo.com'].includes(url.hostname))) throw new Error('UNREVIEWED_SOURCE');
+      if (url.protocol !== 'https:' || !(SEARX.has(url.hostname) || ['api.github.com', 'api.duckduckgo.com', 'data.brreg.no'].includes(url.hostname))) throw new Error('UNREVIEWED_SOURCE');
       const signals = [signal, AbortSignal.timeout(requestMs)];
       const original = init?.signal ?? (input instanceof Request ? input.signal : undefined);
       if (original) signals.push(original);
@@ -31,6 +31,8 @@ export function makeBudgetedFetch(nativeFetch, signal, currentStats, { maxBytes 
       const value = JSON.parse(body.toString('utf8'));
       let valid = false;
       if (SEARX.has(url.hostname)) valid = Array.isArray(value?.results);
+      else if (url.hostname === 'data.brreg.no') valid = Number.isInteger(value?.page?.totalElements) &&
+        (value.page.totalElements === 0 || Array.isArray(value?._embedded?.enheter));
       else if (url.hostname === 'api.duckduckgo.com') valid = typeof value?.AbstractText === 'string' && Array.isArray(value?.RelatedTopics);
       else if (url.pathname === '/search/users') valid = Array.isArray(value?.items);
       else if (url.pathname.endsWith('/members')) valid = Array.isArray(value);

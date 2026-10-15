@@ -47,6 +47,7 @@ jobs:
             const body = JSON.parse(fs.readFileSync("/tmp/oslo.json", "utf8"));
             console.log(JSON.stringify({probe:"Gullkornet Oslo", status, total:body.total, partial:body.partial, error:body.error}));
             if (status !== "200" || !Array.isArray(body.leads)) throw Error("Gullkornet integration query is not operational; do not deploy");
+            if (!body.leads.some(lead => lead.metadata?.municipalityNumber === "0301" && /^\d{9}$/.test(lead.metadata?.organizationNumber))) throw Error("Expected a genuine Oslo registry match with provenance");
           '
           # Startup must not create the configured SQLite database.
           docker exec keelead test ! -e /tmp/ci.db

@@ -9,6 +9,14 @@ or random contact data, so the old 67-source fan-out is intentionally excluded.
 These are discovery candidates, not verified contacts or permission to send mail.
 No public OSM/Nominatim service is used by this generic API.
 
+A fourth source searches Brønnøysund's public registered-name index when an explicit
+location is Oslo or a four-digit Norwegian municipality number. It filters actual
+AS/ASA records, rejects bankrupt/winding-up businesses and preserves registry
+organization-number provenance. Common English search filler is removed and
+`web design` is normalized to `webdesign`; this is name matching, not a claim that
+every result belongs to a verified industry. No contact addresses are inferred.
+Other location names are unsupported by this source and are not silently widened.
+
 Each query has a 20-second worker lifetime, six-second HTTP deadlines, 1 MiB
 response limits, twelve requests per source and two concurrent workers per
 process. The Linux process group is killed before releasing its admission slot.
