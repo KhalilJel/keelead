@@ -1,0 +1,43 @@
+name: Verify bounded search
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/search.test.mjs
+      - run: docker build -t keelead:ci .
+      - name: Container route and worker smoke checks
+        run: |
+          docker run -d --name keelead -e DATABASE_URL=file:/tmp/ci.db -p 3000:3000 keelead:ci
+          trap 'docker logs keelead; docker rm -f keelead' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -s -o /dev/null http://localhost:3000/api/leads?limit=0; then break; fi
+            sleep 1
+          done
+          test "$(curl -s -o /tmp/invalid.json -w '%{http_code}' 'http://localhost:3000/api/leads?limit=0')" = 400
+          grep -q INVALID_COUNT /tmp/invalid.json
+          # Run the actual TS worker inside the final image; a provider outage may
+          # yield an explicit 503, but must never produce invented success data.
+          curl --max-time 30 -s -o /tmp/search.json -w '%{http_code}' 'http://localhost:3000/api/leads?q=Microsoft&limit=1' > /tmp/status
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const status = fs.readFileSync("/tmp/status", "utf8");
+            const body = JSON.parse(fs.readFileSync("/tmp/search.json", "utf8"));
+            if (status === "200") {
+              if (!Array.isArray(body.leads) || body.leads.length > 1 || typeof body.partial !== "boolean") throw Error("Invalid result");
+            } else if (status !== "503" || !["SOURCES_UNAVAILABLE", "SEARCH_TIMEOUT"].includes(body.error)) {
+              throw Error(`Worker startup/route failure: ${status} ${JSON.stringify(body)}`);
+            }
+          '
+          # Startup must not create the configured SQLite database.
+          docker exec keelead test ! -e /tmp/ci.db
