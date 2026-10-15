@@ -1,0 +1,1 @@
+export function makeBudgetedFetch(nativeFetch: typeof fetch, signal: AbortSignal, currentStats: () => { ok: number; failed: number; calls: number } | undefined, options?: { maxBytes?: number; requestMs?: number; maxCalls?: number }): typeof fetch;
